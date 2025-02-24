@@ -43,7 +43,7 @@ def data_split(words):
 
     return X_train, Y_train,X_val,Y_val,X_test,Y_test
 
-def initialize_parameters(block_size,embedding_dimension):
+def initialize_parameters(block_size,embedding_dimension,activation):
     #blocksize = context
     #layer_1 = num of neurons in first layer
     num_layers = int(input("State number of layers (including output layer and excluding input layer):"))
@@ -55,7 +55,11 @@ def initialize_parameters(block_size,embedding_dimension):
     parameters = {}
     for i in range(num_layers):#starting from first hidden layer
         parameters[f'W{i+1}'] = torch.empty(layer_sizes[i+1],layer_sizes[i]) * 0.01
-        nn.init.kaiming_normal_(parameters[f'W{i+1}'], mode='fan_in', nonlinearity='tanh')
+        #initialzing weights based on activation chosen in the network
+        if activation == "tanh":
+            nn.init.xavier_normal_(parameters[f'W{i+1}'])#ensures variance stability (vanishing gradients as gradients might shrink too small)
+        if activation == "relu":
+            nn.init.kaiming_normal_(parameters[f'W{i+1}'], mode='fan_in', nonlinearity='relu')#prevents exploding gradientsis the 
         parameters[f'W{i+1}'].requires_grad = True
         parameters[f'b{i+1}'] = torch.zeros(layer_sizes[i+1])
         parameters[f'b{i+1}'].requires_grad = True
@@ -221,7 +225,7 @@ print(f"x_train shape:{x_train.shape}\ny_train shape:{y_train.shape}\nx_val shap
 
 activation = (input("Enter desired activation function (relu or tanh):"))
 
-parameters = initialize_parameters(3,10)
+parameters = initialize_parameters(3,10,activation)
 for key, value in parameters.items():
     if isinstance(value, torch.Tensor):  # For weights & biases
         print(f"{key} shape: {value.shape}")
@@ -251,6 +255,7 @@ print("---------------")
 
 '''
 hp i used:
+tanh
 3 layers,128,64,27
 batch size = 128
 epochs = 64
