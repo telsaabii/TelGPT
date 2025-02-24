@@ -76,7 +76,7 @@ def get_layer_sizes(parameters):
             break
     return layer_sizes
 
-def forward(x,parameters): 
+def forward(x,parameters,activation): 
     
     embedding = parameters["embedding"]
     emb = embedding[x]
@@ -100,7 +100,12 @@ def forward(x,parameters):
         h = h @ W.T + b #linear transformation
 
         if i < num_layers:#checking to see if final layer or not 
-            h = torch.tanh(h)
+            if activation == "tanh":
+                h = torch.tanh(h)
+            if activation == "relu":
+                h = torch.relu(h)
+        
+
 
     logits = h
     return logits
@@ -124,10 +129,11 @@ def backward(y,logits,lr,parameters):
 
     return loss.item()
 
-def train_model(x_train,y_train,x_val,y_val,x_test,y_test,parameters):
+def train_model(x_train,y_train,x_val,y_val,x_test,y_test,parameters,activation):
     batch_size = int(input("Enter desired batch size:"))
     num_epochs = int(input("Enter desired epoch size:"))
     lr= float(input("Enter desired learning rate:"))
+    
 
 
     for epoch in range(1,num_epochs+1):
@@ -144,7 +150,7 @@ def train_model(x_train,y_train,x_val,y_val,x_test,y_test,parameters):
             x_batch_train = x_train[i:i+batch_size]
             y_batch_train = y_train[i:i+batch_size]
 
-            logits = forward(x_batch_train,parameters)
+            logits = forward(x_batch_train,parameters,activation)
 
             loss_train = backward(y_batch_train,logits,lr,parameters)
             
@@ -158,7 +164,7 @@ def train_model(x_train,y_train,x_val,y_val,x_test,y_test,parameters):
         accuracy = total_train_correct / total_samples
 
         with torch.no_grad():#freezing the parameters
-            val_logits = forward(x_val, parameters)
+            val_logits = forward(x_val, parameters,activation)
             val_loss = F.cross_entropy(val_logits, y_val)
             val_preds = torch.argmax(val_logits, dim=1)
             val_acc = (val_preds == y_val).float().mean()
@@ -169,7 +175,7 @@ def train_model(x_train,y_train,x_val,y_val,x_test,y_test,parameters):
 
 
     with torch.no_grad():
-        test_logits = forward(x_test, parameters)
+        test_logits = forward(x_test, parameters,activation)
         test_loss = F.cross_entropy(test_logits, y_test)
         test_preds = torch.argmax(test_logits, dim=1)
         test_acc = (test_preds == y_test).float().mean()
@@ -180,14 +186,14 @@ def train_model(x_train,y_train,x_val,y_val,x_test,y_test,parameters):
 
 
 
-def sampling(parameters,block_size):
+def sampling(parameters,block_size,activation):
     #try adding temperature
     #input = context
     context = [0] * block_size
     x = torch.tensor([context])
     name = ""
     while True:
-        logits = forward(x,parameters)
+        logits = forward(x,parameters,activation)
         probs = F.softmax(logits,dim=1)
         index = torch.multinomial(probs, num_samples=1).item()
         context = x.tolist()[0][1:]+ [index]
@@ -213,6 +219,8 @@ print(f"Shape of X: {X.shape}\nShape of Y: {Y.shape}")
 x_train, y_train,x_val,y_val,x_test,y_test = data_split(words)
 print(f"x_train shape:{x_train.shape}\ny_train shape:{y_train.shape}\nx_val shape:{x_val.shape}\ny_val shape:{y_val.shape}\nx_test shape:{x_test.shape}\ny_test shape:{y_test.shape}")
 
+activation = (input("Enter desired activation function (relu or tanh):"))
+
 parameters = initialize_parameters(3,10)
 for key, value in parameters.items():
     if isinstance(value, torch.Tensor):  # For weights & biases
@@ -226,14 +234,14 @@ print("MODEL TRAINING:")
 print("---------------")
 
 
-final_parameters = train_model(x_train,y_train,x_val,y_val,x_test,y_test,parameters)
+final_parameters = train_model(x_train,y_train,x_val,y_val,x_test,y_test,parameters,activation)
 print("---------------")
 print("---------------")
 print("---------------")
 print("SAMPLING")
 num_samples = int(input('State number of names you would like to sample:'))
 for i in range(num_samples):
-    name = sampling(final_parameters,3)
+    name = sampling(final_parameters,3,activation)
     print(f"Name {i+1}:{name}\n")
 
 
