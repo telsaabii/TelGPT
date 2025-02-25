@@ -1,1 +1,3 @@
 Going from bigram modeling using shallow neural networks to eventually building gpt-2....
+1. makemore_1 implements a bigram language model and a simple neural network to generate names based on character-level probabilities learned from a dataset of names.
+2. makemore_2 is inspired by the ideas from 'A Neural Probabilistic Language Model' (Bengio et al., 2003) but applied at the character level for trigram modeling, allowing users to customize hyperparameters to explore different network architectures.
